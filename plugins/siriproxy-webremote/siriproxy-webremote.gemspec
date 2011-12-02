@@ -2,7 +2,7 @@
 $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
-  s.name        = "webRemote"
+  s.name        = "siriproxy-webremote"
   s.version     = "0.0.1" 
   s.authors     = ["litlfred"]
   s.email       = [""]
