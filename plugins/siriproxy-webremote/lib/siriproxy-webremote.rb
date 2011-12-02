@@ -5,7 +5,7 @@ require 'siri_objects'
 #Saying "honey XXX YYY ZZZ" will generate the GET request http://honey/webRemote?remote=XXXX&code[0]=YYY&code[1]=ZZZZ.}
 ######
 
-class SiriProxy::Plugin::webRemote < SiriProxy::Plugin
+class SiriProxy::Plugin::WebRemote < SiriProxy::Plugin
   def initialize(config)
     #if you have custom configuration options, process them here!
   end
