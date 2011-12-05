@@ -32,37 +32,34 @@ plugins:
 #
 
 pluginManager: 
-	       - name: "honey" #primary  
-	       - class: "honey" #class name -- will resutl in a require "siriproxypm-#{$APP_CONFIG.PluginManager.class.downcase}"  
-	       	               #class  defined here should be SiriProxy::SiriProxyManager::#{$APP_CONFIG.PluginManager.class}
-       	         speakerIdentifier:   "this\s+is\+(\w)"  #printf search string for switching speakers.  Assumes speaker name is in first capture group
+  - name: "honey" #primary  
+    - class: "honey" #class name -- will resutl in a require "siriproxypm-#{$APP_CONFIG.PluginManager.class.downcase}"  
+      #class  defined here should be SiriProxy::SiriProxyManager::#{$APP_CONFIG.PluginManager.class}
 
-
-   	  
+      
 speakers:
-	"alice":
-	     identify: "this is alice"
-	     welcome: "Hi alice!"
-	     plugins: [ Example, Ping ]
-	  
+  "alice":
+    identify: "this is alice"
+    welcome: "Hi alice!"
+    plugins: [ Example, Ping ]
+    expires: 600 #default expiration for this speaker activity is 10 minutes, instead of 5
 
-	"bob":
-	  identify: [/this is bob(by)?/i ]
-	  welcome: "Hey there bob"
-       	  plugins: [ Example, Alarms, Music ] #this is lke a menu script to follow.  -- really it should be the definition for the fiber stack e.g. a plugin should be a fiber.  
-	  #it does contain a fibre (see core/plugin.rb) but it add it as something like an interface so can be applied to 
-	  # fibre yields when it asks a question (but it does called with arguments which are not subsuequently made into the result of the catching resume.  actually it was Fibre.yeild becomes
-	  #example (cora/plugin) f = Fibre.current (get what ever is running)  then do manager.set_callback as f.resume(text)
-	  # http://ruby-doc.org/core-1.9.3/Fiber.html 
-	    
+
+  "bob":
+    identify: [/this is bob(by)?/i ]
+    welcome: "Hey there bob"
+    plugins: [ Example, Alarms, Music ] #this is lke a menu script to follow.  -- really it should be the definition for the fiber stack e.g. a plugin should be a fiber.  
+    #it does contain a fibre (see core/plugin.rb) but it add it as something like an interface so can be applied to 
+    # fibre yields when it asks a question (but it does called with arguments which are not subsuequently made into the result of the catching resume.  actually it was Fibre.yeild becomes
+    #example (cora/plugin) f = Fibre.current (get what ever is running)  then do manager.set_callback as f.resume(text)
+    # http://ruby-doc.org/core-1.9.3/Fiber.html 
+  
 
 client_preferences:
-	"192.168.1.2":
-		- speaker: "alice"
+  "192.168.1.2":
+    - speaker: "alice"
 
-	"192.168.1.143":
-		- speaker: "bob"
+  "192.168.1.143":
+    - speaker: "bob"
 
 
-	  
-	
