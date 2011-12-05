@@ -1,6 +1,4 @@
-require 'cora'
-require 'pp'
-
+require 'plugin_manager'
 
 class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientCaching
   
@@ -12,7 +10,7 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientCaching
           className = pluginConfig
           name = pluginConfig
           requireName = "siriproxy-#{className.downcase}"
-        else pluginConfig.name && pluginConfig.name.is_a? String
+        elsif   pluginConfig.name && pluginConfig.name.is_a?(String)
           name =pluginConfig['name']
           className = pluginConfig['name']
           requireName = pluginConfig['require'] || "siriproxy-#{className.downcase}"
@@ -47,12 +45,12 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientCaching
     @speaker_plugins = {}
     if $APP_CONFIG.speakers
       $APP_CONFIG.speakers.each do |speaker_config|
-        if  !speaker_config.name || ! speaker_config.name.is_a? String 
+        if  !speaker_config.name || ! speaker_config.name.is_a?(String)
           next
         end
         @speakers << speaker_config.name
         plugins = []
-        if speaker_config.plugins && speaker_config.plugins.respond_to? each
+        if speaker_config.plugins && speaker_config.plugins.respond_to?(each)
           plugins = speaker_config.plugins
         end
         @speaker_plugins[speaker_config.name] = {}
@@ -82,11 +80,11 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientCaching
         default_speaker = @speakers[0]
     end
     client = get_client()
-    if client != nil 
-      && $APP_CONFIG.client_preferences 
-      &&  client_preferences = $APP_CONFIG.client_preferences.const_get(client) 
-      && client_preferences.speaker is_a? String 
-      && @speakers.include? client_preferences.speaker
+    if client != nil \
+      && $APP_CONFIG.client_preferences  \
+      &&  client_preferences = $APP_CONFIG.client_preferences.const_get(client)  \
+      && client_preferences.speaker.is_a?(String) \
+      && @speakers.include?(client_preferences.speaker)
       default_speaker = client_preferences.speaker
     end
     return default_speaker
@@ -103,7 +101,7 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientCaching
   #remainder of the text to be processed
   def identified(text)
     @honey = "honey"
-    if  $APP_Config.PluginManager.name && $APP_Config.PluginManager.name.is_a? String
+    if  $APP_Config.PluginManager.name && $APP_Config.PluginManager.name.is_a?(String)
       @honey = APP_Config.PluginManager.name
     end
 
@@ -136,9 +134,9 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientCaching
   #if identified, return the remainder of the text
   #otherwise return nil
   def is_identified(speaker,text) 
-    if !$APP_CONFIG.speakers
-      or ! speaker_config = $APP_CONFIG.speakers.const_get(speaker)
-      or !speaker_config.identify
+    if !$APP_CONFIG.speakers \
+      || ! speaker_config = $APP_CONFIG.speakers.const_get(speaker) \
+      || !speaker_config.identify
       return false
     end
     if !speaker_config.identify.kind_of? Array
@@ -147,8 +145,8 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientCaching
       list = speaker_config.identify
     end
     list.each do |identifier|
-      if (identifier.is_a? String && idetifier == text)
-        or ( identifier.is_a? RegExp && text.match identifier)
+      if (identifier.is_a?(String) && idetifier == text) \
+        || ( identifier.is_a?(RegExp) && text.match(identifier))
         return true
       end
     end
@@ -157,12 +155,12 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientCaching
 
 
   def welcome_speaker(speaker)    
-    if !$APP_CONFIG.speakers
-      or ! speaker_config = $APP_CONFIG.speakers.const_get(speaker)
-      or !speaker_config.welcome
+    if !$APP_CONFIG.speakers \
+      || ! speaker_config = $APP_CONFIG.speakers.const_get(speaker) \
+      || ! speaker_config.welcome
       return
     end
-    respond.("Welcome #{speaker}")
+    respond(speaker_config.welcome)
   end
 
 
@@ -233,7 +231,7 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientCaching
 
 
   def set_speaker_priority_plugin(speaker,plugin)
-    if !@speaker_plugins[speaker] || !@speaker_plugins[speaker].kind_of? Array
+    if !@speaker_plugins[speaker] || !@speaker_plugins[speaker].kind_of?(Array)
       return
     end
     @speaker_plugins[speaker].delete(plugin)
