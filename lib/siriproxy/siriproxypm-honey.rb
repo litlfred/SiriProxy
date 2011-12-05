@@ -221,8 +221,8 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
     if client == nil
       return
     end
-    #client never accessed before, or all valid speakers have been pushed off.. get the default speaker for this client
     if  !@@speaker_stack[client] 
+      #client never accessed before, or all valid speakers have been pushed off.. get the default speaker for this client
       if default_speaker = get_default_speaker(client)
         @@speaker_stack[client] = [default_speaker]
       else
@@ -232,8 +232,7 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
     #if the new speaker is already in the clients speaker stack, 
     #drop everything above it in the stack.
     #otherwise add the new speaker onto the end of the stack
-    found = @@speaker_stack[client].index new_speaker
-    if found != nil      
+    if (found = @@speaker_stack[client].index(new_speaker)) != nil
       @@speaker_stack[client].slice!(0,found +1)
     else
       @@speaker_stack[client].push(new_speaker)

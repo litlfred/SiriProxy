@@ -48,11 +48,7 @@ speakers:
   "bob":
     identify: [/this is bob(by)?/i ]
     welcome: "Hey there bob"
-    plugins: [ Example, Alarms, Music ] #this is lke a menu script to follow.  -- really it should be the definition for the fiber stack e.g. a plugin should be a fiber.  
-    #it does contain a fibre (see core/plugin.rb) but it add it as something like an interface so can be applied to 
-    # fibre yields when it asks a question (but it does called with arguments which are not subsuequently made into the result of the catching resume.  actually it was Fibre.yeild becomes
-    #example (cora/plugin) f = Fibre.current (get what ever is running)  then do manager.set_callback as f.resume(text)
-    # http://ruby-doc.org/core-1.9.3/Fiber.html 
+    plugins: [ Example, Alarms, Music ] #this is lke a menu script to follow.
   
 
 client_preferences:
