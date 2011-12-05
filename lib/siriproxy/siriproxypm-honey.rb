@@ -1,6 +1,6 @@
 require 'plugin_manager'
 
-class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientCaching
+class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
 
   #intialization
 
@@ -64,7 +64,7 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientCaching
   end
 
 
-  #main process loop
+  #main text processing
 
   def process(text)
     result = nil
@@ -148,37 +148,6 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientCaching
 
 
   #handling of speakers
-
-
-  def is_expired(speaker)
-    result = true
-    #@@speakers_expires[client][speaker] -- value of 0/false is always expired.  value of > 0 is time of expiration, value of <0 means never expire
-    if client = get_client  && @@speaker_expires[client] &&  expire_time  =@@speakers_expires[client][speaker]
-      if expire_time < 0
-        result  = false
-      else 
-        result = Time.now.to_i > expire_time
-      end
-    end
-    return result
-  end
-
-  def set_expiration(speaker,expiration) 
-    if client = get_client
-       @@speaker_expires[client][speaker] = expiration
-    end
-  end
-
-  def register_activity(speaker)
-    expires = 600
-    if $APP_CONFIG.speakers \
-      && speaker_config = $APP_CONFIG.speakers.const_get(speaker) \
-      && speaker_config.expires != nil
-      expires = speaker_config.expires
-    end
-    set_expiration(speaker, Time.now.to_i + expires)
-  end
-
 
   
   def get_speaker
@@ -289,7 +258,6 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientCaching
   end
 
 
-
   def set_priority_plugin(plugin)
     if ! speaker = get_speaker || !@speaker_plugins[speaker] || !@speaker_plugins[speaker].kind_of?(Array)
       return
@@ -297,5 +265,46 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientCaching
     @speaker_plugins[speaker].delete(plugin)
     @speaker_plugins[speaker].unshift(plugin)
   end
+
+
+  #speaker activity expiration
+  def is_expired(speaker)
+    result = true
+    #@@speakers_expires[client][speaker] -- value of 0/false/nil is always expired.  value of > 0 is time of expiration, value of <0 means never expire
+    if client = get_client  && @@speaker_expires[client] &&  expire_time  =@@speakers_expires[client][speaker]
+      if expire_time < 0
+        result  = false
+      else 
+        result = Time.now.to_i > expire_time
+      end
+    end
+    return result
+  end
+
+  def set_expiration(speaker,expiration) 
+    if client = get_client
+       @@speaker_expires[client][speaker] = expiration
+    end
+  end
+
+  def register_activity(speaker)
+    expires = 600
+    if $APP_CONFIG.speakers \
+      && speaker_config = $APP_CONFIG.speakers.const_get(speaker) \
+      && speaker_config.expires != nil
+      expires = speaker_config.expires
+    end
+    if expires > 0
+      set_expiration(speaker, Time.now.to_i + expires)      
+    elsif epxires < 0
+      set_expiration(speaker, expires)
+    else
+      set_expiration(speaker,0)  #speaker is already expired
+    end
+      
+  end
+
+
+
 
 end
