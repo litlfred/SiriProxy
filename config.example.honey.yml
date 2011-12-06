@@ -33,7 +33,7 @@ plugins:
 
 pluginManager: 
   class: "honey" 
-  #used to take control of system primary  
+  #the identifier used to take control of system primary.  the plugin manager enforces that all text commands to be processed should start with the identifier
   identifier: "honey" 
 
       

@@ -103,16 +103,20 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
   #returns nil if we need to ignore this text.  otherwise it returns the 
   #remainder of the text to be processed
   def identified(text)
-    honey = "honey"
-    if  $APP_Config.PluginManager.name && $APP_Config.PluginManager.name.is_a?(String)
-      honey = APP_Config.PluginManager.name
+    result = nil
+    identifier = "honey"
+    if  $APP_Config.pluginManager.identifier && $APP_Config.pluginManager.identifier.is_a?(String)
+      identifier = $APP_Config.pluginManager.identifier
     end
-
-    matchdata = text.match /^#{honey}\s/i
-    if  ! matchdata.string 
-      return nil
+    if identifier[0] == '/'
+      regexp = eval identifier
+    else 
+      regexp = RegExp.new("^\s*#{identifier}\s",true);
     end
-    return matchdata.post_match
+    if ( regexp && regexp.is_a?(RegExp) && matchdata = text.match(regexp))
+      result =  matchdata.post_match
+    end
+    return result
   end
 
 
@@ -203,8 +207,16 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
       list = speaker_config.identify
     end
     list.each do |identifier|
-      if (identifier.is_a?(String) && idetifier == text) \
-        || ( identifier.is_a?(RegExp) && text.match(identifier))
+      if !identifier.is_a?(String) 
+        next
+      end
+      if identifier[0] == '/'
+        #try to make it into a regexp
+        regexp = eval identifier
+        if ( regexp.is_a?(RegExp) && text.match(regexp))
+          return true
+        end
+      elsif  idetifier == text 
         return true
       end
     end
