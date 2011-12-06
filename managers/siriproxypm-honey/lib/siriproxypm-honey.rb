@@ -69,20 +69,29 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
     return plugin_obj
   end
 
-
   #main text processing
 
   def process(text)
-    
     result = nil
     log "Processing '#{text}'"
     do_call_backs
-    if  (proc_text = requested(text)) == nil
-      no_matches
-      return nil
+    if  has_open_connection 
+      log "Connection is still open"
+      if  (proc_text = requested(text)) == nil
+        #we may not need this block... if the text is stream in tokenized chunks to process
+        proc_text = text
+      end
+    else
+      if  (proc_text = requested(text)) == nil
+        no_matches
+        return nil
+      end
     end
     log "Got Honey Command: #{proc_text}"
-    if result = switch_speaker(proc_text ) ||  result = process_plugins(proc_text)
+    keep_open_connection
+    if result = switch_speaker(proc_text ) \
+      ||  result = goodbye(proc_text) \
+      || result = process_plugins(proc_text)
       self.guzzoni_conn.block_rest_of_session 
     else
       log "No matches for '#{proc_text}' on honey"
@@ -97,6 +106,34 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
     if (speaker) 
       respond( "Hello #{speaker}.  What do you want?",{})
     end
+  end
+
+  def goodbye(text) 
+    result = false
+    bye = 'bye'
+    if  $APP_CONFIG.pluginManager.has_key?('goodbye') \
+      && $APP_CONFIG.pluginManager['goodbye'] != nil 
+      if  $APP_CONFIG.pluginManager['goodbye'].is_a?(String)
+        goodbyes = [$APP_CONFIG.pluginManager['goodbye']]
+      else
+        goodbyes = $APP_CONFIG.pluginManager['goodbye']
+      end
+    end
+    goodbyes.each do |goodbye|
+      if goodbye[0] == '/'
+        regexp = eval goodbye
+      else 
+        regexp = Regexp.new("^\s*#{goodbye}\s",true);
+      end
+      if ( regexp && regexp.is_a?(Regexp) && matchdata = text.match(regexp))
+        result =  true
+        break
+      end
+    end
+    if result
+      close_connection
+    end
+    return result
   end
   
   def  do_call_backs
@@ -371,6 +408,10 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
 
 
   #speaker activity expiration
+
+
+
+
   def speaker_expired(speaker)
     result = true
     #  expire time -- value of 0/false/nil is always expired.  value of > 0 is time of expiration, value of <0 means never expire
@@ -389,6 +430,7 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
 
   def set_expiration(speaker,expiration) 
     if (client = get_client )!=nil \
+      && @@client_state.has_key?(client) \
       && @@client_state[client] != nil
        @@client_state[client]["expires"][speaker] = expiration
     end
@@ -412,9 +454,42 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
     else
       set_expiration(speaker,0)  #speaker is already expired
     end
-      
+    keep_open_connection
   end
 
+
+  def close_connection
+    if (client = get_client )!=nil \
+      && @@client_state.has_key?(client) \
+      && @@client_state[client] != nil      
+      @@client_state[client]["activity"] = 0
+    end
+  end
+
+  def keep_open_connection
+    if (client = get_client )!=nil \
+      && @@client_state.has_key?(client) \
+      && @@client_state[client] != nil      
+      @@client_state[client]["activity"] = Time.now.to_i
+    end
+  end
+
+
+  def has_open_connection
+    result = false
+    open = 20
+    if $APP_CONFIG.pluginManager.has_key?('open')
+      open = $APP_CONFIG.pluginManager['open']
+    end
+    if (client = get_client) != nil  \
+      && @@client_state.has_key?(client) \
+      && @@client_state[client] != nil \
+      && @@client_state[client].has_key?('activity') \
+      && @@client_state[client]['activity'] > 0
+      result = @@client_state[client]['activity'] + open >= Time.now.to_i 
+    end
+    return result
+  end
 
   #overide some methods in PluginManager and Cora to make them speaker aware.  don't know if these are used anywhere or not.
 
