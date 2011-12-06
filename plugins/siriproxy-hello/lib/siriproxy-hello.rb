@@ -10,6 +10,9 @@ require 'siri_objects'
 ######
 
 class SiriProxy::Plugin::Hello < SiriProxy::Plugin
+  def initialize(config)
+    #if you have custom configuration options, process them here!
+  end
 
   listen_for /say hello/i do
     say "Hello.  Siri Proxy is up and running!" #say something to the user!
