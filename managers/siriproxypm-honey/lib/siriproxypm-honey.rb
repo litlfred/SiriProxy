@@ -193,8 +193,7 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
 
 
 
-  #if identified, return the remainder of the text
-  #otherwise return nil
+
   def is_identified(speaker,text) 
     if !$APP_CONFIG.speakers \
       || ! speaker_config = $APP_CONFIG.speakers.const_get(speaker) \
@@ -213,14 +212,14 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
       if identifier[0] == '/'
         #try to make it into a regexp
         regexp = eval identifier
-        if ( regexp.is_a?(RegExp) && text.match(regexp))
-          return true
-        end
-      elsif  identifier == text 
+      elsif  
+        regexp = RegExp.new("^\s*#{identifier}\s",true);
+      end
+      if  regexp && regexp.is_a?(RegExp) && text.match(regexp)
         return true
       end
     end
-    return true
+    return false
   end
 
 
