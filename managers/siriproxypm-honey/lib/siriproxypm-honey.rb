@@ -216,7 +216,7 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
         if ( regexp.is_a?(RegExp) && text.match(regexp))
           return true
         end
-      elsif  idetifier == text 
+      elsif  identifier == text 
         return true
       end
     end
