@@ -285,8 +285,8 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
       && $APP_CONFIG.speakers \
       && $APP_CONFIG.speakers.respond_to?(has_key) 
       $APP_CONFIG.client_preferences.each do |range,client_preferences| 
-        if !in_range(client,range) 
-          ||  !client_preferences \
+        if !in_range(client,range)  \
+          || !client_preferences \
           || !client_preferences.speaker
           next
         end
@@ -373,7 +373,7 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
     if !plugins || !plugins.kind_of?(Array) || ! speaker = get_speaker 
       return
     end
-    !@speaker_plugins[speaker] = plugins
+    @speaker_plugins[speaker] = plugins
   end
 
 end
