@@ -68,8 +68,8 @@ client_preferences:
     speaker: ["bob", "alice"] 
     #default speaker is bob.  Allowed to cede control to alice
 
-  "192.168.1.50,192.168.1.99: 
-     #key is dhcp range for guest connections on wifi network
+  "192.168.1.50-192.168.1.99,192.168.1.102": 
+     #key is dhcp range for guest connections on wifi network.  192.168.1.102 is for my mom.
      speaker: "guest"
 
 
