@@ -16,21 +16,28 @@ class SiriProxy
 
     pm = nil    
     
-    if $APP_CONFIG.PluginManager && $APP_CONFIG.PluginManager.class && $APP_CONFIG.PluginManager.class is_a?  String 
-      class=$APP_CONFIG.PluginManager.class
-      requireName = "siriproxypm-#{class.downcase}"
-      klass = SiriProxy.const_get(class)
-      if not klass.is_a?(Class)
-        raise "Specified plugin manager #{class} is not a class"
+    if $APP_CONFIG.pluginManager && $APP_CONFIG.pluginManager.class 
+      if $APP_CONFIG.pluginManager.class.is_a?(String)
+        class_name = $APP_CONFIG.pluginManager.class
+        require_name = "siriproxypm-#{class.downcase}"
+      else
+        class_name = $APP_CONFIG.pluginManager.class["name"]
+        require_name = $APP_CONFIG.pluginManager.class['require'] || "siriproxy-#{class_name.downcase}" 
       end
-      pm = SiriProxy::PluginManager.const_get(class).new
-      if !pm.ancestors.include? SiriProxy::PluginManager
-        raise "Cannot create plugin manager #{APP_CONFIG.PluginManager}"
+      if require_name \
+        && class_name \
+        && klass = SiriProxy::PluginManager.const_get(class_name) \
+        && klass.is_a?(Class)
+        pm = klass.new
       end
     else
       pm = SiriProxy::PluginManager.new
     end
-    
+
+    if !pm || !pm.ancestors.include?(SiriProxy::PluginManager)
+      raise "Cannot instantiate plugin manager"
+    end
+
     EventMachine.run do
       begin
         puts "Starting SiriProxy on port #{$APP_CONFIG.port}.."

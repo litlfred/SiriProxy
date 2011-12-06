@@ -297,13 +297,6 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
   end
 
 
-  def set_priority_plugin(plugin)
-    if ! speaker = get_speaker || !@speaker_plugins[speaker] || !@speaker_plugins[speaker].kind_of?(Array)
-      return
-    end
-    @speaker_plugins[speaker].delete(plugin)
-    @speaker_plugins[speaker].unshift(plugin)
-  end
 
 
   #speaker activity expiration
@@ -347,6 +340,29 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
   end
 
 
+  #overide some methods in PluginManager and Cora to make them speaker aware.  don't know if these are used anywhere or not.
 
+  def set_priority_plugin(plugin)
+    if ! speaker = get_speaker || !@speaker_plugins[speaker] || !@speaker_plugins[speaker].kind_of?(Array)
+      return
+    end
+    @speaker_plugins[speaker].delete(plugin)
+    @speaker_plugins[speaker].unshift(plugin)
+  end
+
+
+  def get_plugins
+    if ! speaker = get_speaker || !@speaker_plugins[speaker] || !@speaker_plugins[speaker].kind_of?(Array)
+      return
+    end
+    return @speaker_plugins[speaker]
+  end 
+
+  def set_plugins(plugins)    
+    if !plugins || !plugins.kind_of?(Array) || ! speaker = get_speaker 
+      return
+    end
+    !@speaker_plugins[speaker] = plugins
+  end
 
 end
