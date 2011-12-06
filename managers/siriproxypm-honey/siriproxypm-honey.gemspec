@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.authors     = ["litlfred"]
   s.email       = [""]
   s.homepage    = ""
-  s.summary     = %q{An Client Caching  Plugin Manager}
+  s.summary     = %q{A Client Caching  Plugin Manager}
   s.description = %q{Plugin manager with per-client settings and users/roles. }
 
   s.rubyforge_project = "siriproxypm-honey"
@@ -19,5 +19,4 @@ Gem::Specification.new do |s|
 
   # specify any dependencies here; for example:
   # s.add_development_dependency "rspec"
-  # s.add_runtime_dependency "rest-client"
 end

@@ -19,22 +19,23 @@ class SiriProxy
     if $APP_CONFIG.pluginManager && $APP_CONFIG.pluginManager.class 
       if $APP_CONFIG.pluginManager.class.is_a?(String)
         class_name = $APP_CONFIG.pluginManager.class
-        require_name = "siriproxypm-#{class.downcase}"
+        require_name = "siriproxypm-#{class_name.downcase}"
       else
-        class_name = $APP_CONFIG.pluginManager.class["name"]
-        require_name = $APP_CONFIG.pluginManager.class['require'] || "siriproxypm-#{class_name.downcase}" 
+        class_name = $APP_CONFIG.pluginManager["class"]["name"]
+        require_name = $APP_CONFIG.pluginManager["class"]['require'] || "siriproxypm-#{class_name.downcase}" 
       end
-      if require_name \
-        && class_name \
-        && klass = SiriProxy::PluginManager.const_get(class_name) \
-        && klass.is_a?(Class)
-        pm = klass.new
-      end
+
+      if require_name.length > 0 &&  class_name.length > 0 
+        require(require_name) 
+        if (klass = SiriProxy::PluginManager.const_get(class_name)).is_a?(Class)          
+          pm = klass.new
+        end
+      end 
     else
       pm = SiriProxy::PluginManager.new
     end
 
-    if !pm || !pm.ancestors.include?(SiriProxy::PluginManager)
+    if pm == nil || !pm.kind_of?(SiriProxy::PluginManager)
       raise "Cannot instantiate plugin manager"
     end
 

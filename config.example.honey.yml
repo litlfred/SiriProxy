@@ -39,10 +39,10 @@ plugins:
 
 pluginManager: 
   class: 
-     name: "honey" 
+     name: "Honey" 
      path: './managers/siriproxypm-honey'
   #the identifier used to take control of system primary.  the plugin manager enforces that all text commands to be processed should start with the identifier
-  identifier: "honey" 
+  identifier: ["honey" ,"/(hey|hi|) honey/i" ]
 
       
 speakers:
@@ -59,7 +59,7 @@ speakers:
     plugins: [ Example, Numbers, Hello ] 
     #this is lke a menu script to follow.
   
-  "guest":
+  guest:
     identify: /guest access/i 
     welcome: Guest Access Allowed
     plugins: [ Numbers ] 
@@ -71,12 +71,12 @@ client_preferences:
     #only allowed speaker is alice
     
   "192.168.1.101":
-    speaker: ["bob", "alice"] 
+    speakers: ["bob", "alice"] 
     #default speaker is bob.  Allowed to cede control to alice
 
   "192.168.1.50-192.168.1.99,192.168.1.102": 
      #key is dhcp range for guest connections on wifi network.  192.168.1.102 is for my mom.
-     speaker: "guest"
+     speakers: [guest,bob,alice]
 
 
 
