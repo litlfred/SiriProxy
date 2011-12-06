@@ -41,20 +41,20 @@ speakers:
   "alice":
     identify: "this is alice"
     welcome: "Hi alice!"
-    plugins: [ "Example", "Ping" ]
+    plugins: [ "Example", "Numbers" ]
     expires: 600 
     #default expiration for this speaker activity is 10 minutes, instead of 5  
 
   "bob":
     identify: [/this is bob(by)?/i ]
     welcome: "Hey there bob"
-    plugins: [ Example, Alarms, Music ] 
+    plugins: [ Example, Numbers, Hello ] 
     #this is lke a menu script to follow.
   
   "guest":
     identify: /guest access/i 
     welcome: "Guest Access Allowed"
-    plugins: [ Speakers ] 
+    plugins: [ Numbers ] 
 
 
 client_preferences:
