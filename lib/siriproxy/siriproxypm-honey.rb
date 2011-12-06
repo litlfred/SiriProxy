@@ -103,12 +103,12 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
   #returns nil if we need to ignore this text.  otherwise it returns the 
   #remainder of the text to be processed
   def identified(text)
-    @honey = "honey"
+    honey = "honey"
     if  $APP_Config.PluginManager.name && $APP_Config.PluginManager.name.is_a?(String)
-      @honey = APP_Config.PluginManager.name
+      honey = APP_Config.PluginManager.name
     end
 
-    matchdata = text.match /^#{@honey}\s/i
+    matchdata = text.match /^#{honey}\s/i
     if  ! matchdata.string 
       return nil
     end
@@ -241,9 +241,9 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
     #drop everything above it in the stack.
     #otherwise add the new speaker onto the end of the stack
     if (found = @@client_state[client]["speakers"].index(new_speaker)) != nil
-      @@speaker_stack[client]["speakers"].slice!(0,found +1)
+      @@client_state[client]["speakers"].slice!(0,found +1)
     else
-      @@speaker_stack[client]["speakers"].push(new_speaker)
+      @@client_state[client]["speakers"].push(new_speaker)
     end
   end
 
