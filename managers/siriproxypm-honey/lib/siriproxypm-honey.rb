@@ -78,18 +78,26 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
     log "Processing '#{text}'"
     do_call_backs
     if  (proc_text = requested(text)) == nil
+      no_matches
       return nil
     end
     log "Got Honey Command: #{proc_text}"
-    if (result = switch_speaker(proc_text )) != nil ||  (result = process_plugins(proc_text))!=nil
+    if result = switch_speaker(proc_text ) ||  result = process_plugins(proc_text)
       self.guzzoni_conn.block_rest_of_session 
     else
       log "No matches for '#{proc_text}' on honey"
-      no_matches      
+      prompt_speaker
     end
+    send_request_complete_to_iphone
     return result
   end
 
+  def prompt_speaker
+    speaker = get_speaker
+    if (speaker) 
+      respond( "Hello #{speaker}.  What do you want?",{})
+    end
+  end
   
   def  do_call_backs
     if !@callback
