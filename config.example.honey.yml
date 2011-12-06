@@ -6,6 +6,12 @@ plugins:
     - name: 'Example'
       path: './plugins/siriproxy-example'
 
+    - name: 'Numbers'
+      path: './plugins/siriproxy-numbers'
+
+    - name: 'Hello'
+      path: './plugins/siriproxy-hello'
+
     # - name: 'Thermostat'
     #   git: 'git://github.com/plamoni/SiriProxy-Thermostat.git'
     #   host: '192.168.2.71' 
@@ -32,28 +38,30 @@ plugins:
 #
 
 pluginManager: 
-  class: "honey" 
+  class: 
+     name: "honey" 
+     path: './managers/siriproxypm-honey'
   #the identifier used to take control of system primary.  the plugin manager enforces that all text commands to be processed should start with the identifier
   identifier: "honey" 
 
       
 speakers:
-  "alice":
-    identify: "this is alice"
-    welcome: "Hi alice!"
-    plugins: [ "Example", "Numbers" ]
+  alice:
+    identify: this is alice
+    welcome: Hi alice!
+    plugins: [ Example, Numbers ]
     expires: 600 
     #default expiration for this speaker activity is 10 minutes, instead of 5  
 
-  "bob":
-    identify: [/this is bob(by)?/i ]
-    welcome: "Hey there bob"
+  bob:
+    identify:   [ "/this is bob(by)?/i" , "/this is robert/i" ]
+    welcome: Hey there Mr. Bill
     plugins: [ Example, Numbers, Hello ] 
     #this is lke a menu script to follow.
   
   "guest":
     identify: /guest access/i 
-    welcome: "Guest Access Allowed"
+    welcome: Guest Access Allowed
     plugins: [ Numbers ] 
 
 

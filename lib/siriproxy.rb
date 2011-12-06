@@ -22,7 +22,7 @@ class SiriProxy
         require_name = "siriproxypm-#{class.downcase}"
       else
         class_name = $APP_CONFIG.pluginManager.class["name"]
-        require_name = $APP_CONFIG.pluginManager.class['require'] || "siriproxy-#{class_name.downcase}" 
+        require_name = $APP_CONFIG.pluginManager.class['require'] || "siriproxypm-#{class_name.downcase}" 
       end
       if require_name \
         && class_name \

@@ -24,10 +24,16 @@ if config.plugins
   end
 end
 
+
+
 if config.pluginManager && config.pluginManager.class
   if config.pluginManager.class.is_a? String
-    gem "siriproxy-#{config.pluginManager.class.downcase}"
+    gem "siriproxypm-#{config.pluginManager.class.downcase}"
   else
-    gem "siriproxy-#{config.pluginManger.class['gem'] || config.pluginManager.class['name'].downcase}", :path => config.pluginManager.class['path'], :git => config.pluginManger.class['git'], :require => config.pluginManager.class['require']
+    gem "siriproxypm-#{config.pluginManager['class']['gem'] || config.pluginManager['class']['name'].downcase}",  
+    :path => config.pluginManager['class']['path'], 
+    :git => config.pluginManager['class']['git'],  
+    :require => config.pluginManager['class']['require']
+     
   end
 end
