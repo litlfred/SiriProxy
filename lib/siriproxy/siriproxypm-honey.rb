@@ -6,26 +6,27 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
 
   def intialize() 
     super(initialize) #calls load_plugins
-    init_speaker_stack
+    init_client
   end
   
-  def init_speaker_stack
-    if @@speaker_stack == nil       
-      #create hash of arrays.  key is client (e.g. ipaddress) 
-      @@speaker_expires = {}
-      @@speaker_stack = {}
+  def init_client
+    if @@client_state == nil       
+      #create hash of array of stack states:  key is client (e.g. ipaddress)  value is hash with
+      #key "speakers"  is an array of speaker names 
+      #key "expires" is a hash with keys speaker and values an expire time (unix timestamp)
+      #containing state data under "speakers" and expiration time under "expires"
+      @@client_state = {}
     end
+    
   end
 
   def load_plugins
-    @speakers = []
     @speaker_plugins = {}
-    if $APP_CONFIG.speakers
+    if $APP_CONFIG.speakers && $APP_CONFIG.speakers.respond_to?(each) 
       $APP_CONFIG.speakers.each do |speaker_config|
         if  !speaker_config.name || ! speaker_config.name.is_a?(String)
           next
         end
-        @speakers << speaker_config.name
         plugins = []
         if speaker_config.plugins && speaker_config.plugins.respond_to?(each)
           plugins = speaker_config.plugins
@@ -118,9 +119,12 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
   #if switch speaker, return the name of the new speaker
   def switch_speaker(text) 
     new_speaker = nil
-    @@speakers.each do |speaker|
-      if is_identified(speaker,text)
-        new_speaker = speaker
+    if $APP_CONFIG.speakers && $APP_CONFIG.speakers.respond_to?(each)   
+      $APP_CONFIG.speakers.each do |speaker,speaker_config|
+        if is_identified(speaker,text)
+          new_speaker = speaker
+          break
+        end
       end
     end
     if new_speaker
@@ -152,20 +156,23 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
   
   def get_speaker
     speaker = nil
-    if client = get_client  && @@speaker_stack[client].respond_to?(each)
-      #really go through the speaker stack starting at the end. until we find one that has not expired
-      #then process plugins for that speaker.
+    if client = get_client  \
+      && @@client_state[client] \
+      && @@client_state[client]["speakers"].respond_to?(each)
+      #go through the speaker stack starting at the end. until we find one that has not expired
       speaker  = nil
-      while !speaker &&  @@speaker_stack[client].count > 0
-        t_speaker = @@speaker_stack[client]
+      while !speaker  &&  @@client_state[client]["speakers"].count > 0
+        t_speaker = @@client_state[client]["speakers"][-1]
         if speaker_expired(client,t_speaker)
-          @@speaker_stack[client].pop()      
+          @@client_state[client]["speakers"].pop()      
         else
           speaker = t_speaker
           break
         end
       end      
     end
+    #if everyone is expired. we could have exhaushed all of our speakers for our client.  
+    #however the call to get_default_speaker will repopulate speakers lsit with the default speaker
     if !speaker
       speaker = get_default_speaker
     end
@@ -221,37 +228,70 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
     if client == nil
       return
     end
-    if  !@@speaker_stack[client] 
+    if  !@@client_state[client] 
       #client never accessed before, or all valid speakers have been pushed off.. get the default speaker for this client
       if default_speaker = get_default_speaker(client)
-        @@speaker_stack[client] = [default_speaker]
+        speakers = [default_speaker]
       else
-        @@speaker_stack[client] = []
+        speakers = []
       end
+      @@client_state[client] = {"speakers"=>speakers,"expires" => {}}
     end
     #if the new speaker is already in the clients speaker stack, 
     #drop everything above it in the stack.
     #otherwise add the new speaker onto the end of the stack
-    if (found = @@speaker_stack[client].index(new_speaker)) != nil
-      @@speaker_stack[client].slice!(0,found +1)
+    if (found = @@client_state[client]["speakers"].index(new_speaker)) != nil
+      @@speaker_stack[client]["speakers"].slice!(0,found +1)
     else
-      @@speaker_stack[client].push(new_speaker)
+      @@speaker_stack[client]["speakers"].push(new_speaker)
     end
   end
 
+  def in_range(client,range) 
+    client.split(",").each do |ranges|
+      pieces = ranges.split("-")
+      if pieces.count == 1 && pices[0] == client
+        return true
+      elsif pieces.count == 2
+        ip_beg = pieces[0].split(".")[3]
+        ip_end = pieces[1].split(".")[3]
+        if ip_beg != nil \
+          && ip_end != nil \
+          && ip_beg <= client \
+          && client <= ip_end 
+          return true
+        end
+      end
+    end
+    return false
+  end
 
   def get_default_speaker 
     default_speaker = nil
-    if @speakers.count > 0
-        default_speaker = @speakers[0]
-    end
-    client = get_client()
-    if client != nil \
-      && $APP_CONFIG.client_preferences  \
-      &&  client_preferences = $APP_CONFIG.client_preferences.const_get(client)  \
-      && client_preferences.speaker.is_a?(String) \
-      && @speakers.include?(client_preferences.speaker)
-      default_speaker = client_preferences.speaker
+    if (client = get_client()) != nil    \
+      && $APP_CONFIG.client_preferences \
+      && $APP_CONFIG.client_preferences.respond_to?(each) \
+      && $APP_CONFIG.speakers \
+      && $APP_CONFIG.speakers.respond_to?(has_key) 
+      $APP_CONFIG.client_preferences.each do |range,client_preferences| 
+        if !in_range(client,range) 
+          ||  !client_preferences \
+          || !client_preferences.speaker
+          next
+        end
+        
+        if client_preferences.speaker.is_a?(String) 
+          speakers = [client_preferences.speaker]
+        else
+          speakers = client_preferences.speaker
+        end
+        speakers.each do |speaker|       
+          if  $APP_CONFIG.speakers.has_key(speaker)
+            default_speaker = client_preferences.speaker        
+            break
+          end
+        end
+      end
     end
     return default_speaker
   end
@@ -269,8 +309,10 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
   #speaker activity expiration
   def is_expired(speaker)
     result = true
-    #@@speakers_expires[client][speaker] -- value of 0/false/nil is always expired.  value of > 0 is time of expiration, value of <0 means never expire
-    if client = get_client  && @@speaker_expires[client] &&  expire_time  =@@speakers_expires[client][speaker]
+    #  expire time -- value of 0/false/nil is always expired.  value of > 0 is time of expiration, value of <0 means never expire
+    if client = get_client  \
+      && @@client_state[client]\
+      && expire_time = @@client_state[client]["expires"][speaker]
       if expire_time < 0
         result  = false
       else 
@@ -281,8 +323,9 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager
   end
 
   def set_expiration(speaker,expiration) 
-    if client = get_client
-       @@speaker_expires[client][speaker] = expiration
+    if client = get_client \
+      && @@client_state[client]
+       @@client_state[client]["expires"][speaker] = expiration
     end
   end
 
