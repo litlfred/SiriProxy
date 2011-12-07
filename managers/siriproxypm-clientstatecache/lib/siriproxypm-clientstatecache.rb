@@ -147,6 +147,21 @@ class SiriProxy::PluginManager::ClientStateCache < SiriProxy::PluginManager
     return false
   end
 
+  def ensure_regexp(regexp) 
+    if regexp != nil
+      regexp.is_a?(String) 
+      if regexp[0] == '/'
+        #try to make it into a regexp
+        regexp = eval regexp
+      elsif  
+        regexp = Regexp.new("^\s*#{regexp}",true);
+      end
+    end
+    if regexp == nil || !regexp.is_a?(Regexp)
+      regexp = nil
+    end
+    return regexp
+  end
     
   def text_matches(text,list, default_list = [],post =false)    
     text = text.strip
@@ -166,18 +181,8 @@ class SiriProxy::PluginManager::ClientStateCache < SiriProxy::PluginManager
       list = default_list
     end
     list.each do |regexp|
+      regexp = ensure_regexp(regexp)
       if regexp == nil
-        next
-      end
-      if regexp.is_a?(String) 
-        if regexp[0] == '/'
-          #try to make it into a regexp
-          regexp = eval regexp
-        elsif  
-          regexp = Regexp.new("^\s*#{regexp}",true);
-        end
-      end
-      if regexp == nil || !regexp.is_a?(Regexp)
         next
       end
       if post
