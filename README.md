@@ -38,6 +38,14 @@ For a list of current plugins and some more demo videos, check the [Plugins page
 Set-up Instructions
 -------------------
 
+**Video of a complete installation on Ubuntu 11.10**
+
+[http://www.youtube.com/watch?v=GQXyJR6mOk0](http://www.youtube.com/watch?v=GQXyJR6mOk0)
+
+This is a video of a complete start-to-finish installation on a fresh install of Ubuntu 11.10. 
+
+The commands used in the video can be found at [https://gist.github.com/1428474](https://gist.github.com/1428474).
+
 **Set up DNS**
 
 Before you can use SiriProxy, you must set up a DNS server on your network to forward requests for guzzoni.apple.com to the computer running the proxy (make sure that computer is not using your DNS server!). I recommend dnsmasq for this purpose. It's easy to get running and can easily handle this sort of behavior. ([http://www.youtube.com/watch?v=a9gO4L0U59s](http://www.youtube.com/watch?v=a9gO4L0U59s))
@@ -77,7 +85,7 @@ Clone this repo locally, then navigate into the SiriProxy directory (the root of
 	`siriproxy bundle`
 8. Start SiriProxy (must start as root because it uses a port < 1024):  
 	`rvmsudo siriproxy server`
-9. Test that the server is running by saying "Text Siri Proxy" to your phone.
+9. Test that the server is running by saying "Test Siri Proxy" to your phone.
 
 Note: on some machines, rvmsudo changes "`~`" to "`/root/`". This means that you may need to symlink your "`.siriproxy`" directory to "`/root/`" in order to get the application to work:  
 
@@ -106,6 +114,10 @@ FAQ
 **Will this let me run Siri on my iPhone 4, iPod Touch, iPhone 3G, Microwave, etc?**
 
 No. Please stop asking. 
+
+**What is your opinion on h1siri, public SiriProxy servers, and other Siri "ports"?**
+
+Glad you asked! Watch this: [http://youtu.be/Y_Q6PfxBSbA](http://youtu.be/Y_Q6PfxBSbA)
 
 **How do I generate the certificate?**
 
