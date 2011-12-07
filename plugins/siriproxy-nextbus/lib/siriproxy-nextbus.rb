@@ -47,7 +47,7 @@ class SiriProxy::Plugin::NextBus < SiriProxy::Plugin
     return regexp
   end
 
-  def add_listeners(regexps,options = {},&block) 
+  def add_listeners(regexps,options= {},&block) 
     if regexps == nil 
       return
     end
@@ -60,7 +60,7 @@ class SiriProxy::Plugin::NextBus < SiriProxy::Plugin
         || !regexp.is_a?(Regexp)
         next
       end
-      listen_for(regexp,options,block)
+      listeners[regexp] = {:block => block,   within_state: ([options[:within_state]].flatten)}
     end
   end
 
@@ -78,43 +78,52 @@ class SiriProxy::Plugin::NextBus < SiriProxy::Plugin
           next
         end
         route = bus_data["route"]
+        response = bus_data["response"]
         stop = bus_data["stop"]
         direction = bus_data["direction"]
-        identify = bus_data["identify"]
-        if route == nil || stop == nil || direction == nil || identify == nil 
+        listeners = bus_data["listeners"]
+        if route == nil || stop == nil || direction == nil || listeners == nil 
           next
         end
-        add_listeners(identify) {show_next_bus(route,direction,stop)}
+        add_listeners(listeners) {show_next_bus(route,direction,stop,response)}
       end
+    end
   end
   
 
-  listen_for()  {show_next_bus('NS','S','airpwest_s')}
 
-  def show_next_bus(route,direction,stop)
+  def show_next_bus(route,direction,stop,response)
     say "Let me check" 
-    when = get_next_bus(route,direction,stop)
-    if when  == nil
-      say "Sorry. I could not find the next bus"
+    minutes = get_next_bus(route,direction,stop)
+    if minutes  == nil || !minutes.is_a?(String)
+      say "Sorry. I could not find the next bus information"
     else
-      say "The next #{route} bus is in #{when} minutes"
+      if response == nil || !response.is_a?(String)
+        reponse = "The next #{route} bus is in %s minutes"
+      end
+      response = sprintf(response,minutes.strip)
+      say response
     end
     request_completed
   end
 
-  def get_next_bus(route,director,stop) 
-    #http://www.nextbus.com/predictor/fancyBookmarkablePredictionLayer.shtml?a=chapel-hill&r=NS&d=S&s=airpwest_s&ts=airprigg_s
+  def get_next_bus(route,direction,stop) 
     url = "http://www.nextbus.com/predictor/fancyBookmarkablePredictionLayer.shtml?a=chapel-hill&r=#{route}&d=#{direction}&s=#{stop}"
-    log "Requesting #{url}"
-    doc = Nokogiri::HTML(open(url))
-    # doc.xpath('//h1/a[@class="blue"]').each do |link|
-    #   puts link.content
-    # end
-    return "10"
+    path = "//td[@class='predictionNumberForFirstPred']"
+    return scrape_url(url,path)
   end
-  
-  
 
+  def scrape_url(url,path)
+    log "Scraping #{url}"
+    result = false
+    doc = Nokogiri::HTML(open(url))
+    doc.xpath(path).each do |node|
+      result = node.content
+      break
+    end
+    log "Scraped #{result}"
+    return result
+  end
   
 
 
