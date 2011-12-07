@@ -10,7 +10,7 @@ class SiriProxy::PluginManager::ClientStateCache < SiriProxy::PluginManager
   #initialization
   ###############################################
 
-  @@client_state = nil
+  # @@client_state = nil
 
   #intialization
   def initialize()
@@ -28,25 +28,27 @@ class SiriProxy::PluginManager::ClientStateCache < SiriProxy::PluginManager
 
 
   def init_client
-    if @@client_state == nil       
-      #create hash of array of stack states:  key is client (e.g. ipaddress)  value is hash with
-      #key :activity the last time activity was registered from this client
-      @@client_state = {}
-    end
+    #create hash of array of stack states:  key is client (e.g. ipaddress)  value is hash with
+    #only used key is :activity, which gives the last time activity was registered from this client
+    @client_state = {}
   end
   
   def set_client_state(symbol,val) 
     client = get_client()
-    if client != nil
-      @@client[client][symbol]  = val
+    if client != nil 
+      if !@client_state.has_key?(client) \
+        || @client_state[client] == nil
+        @client_state[client] = {}
+      end
+      @client_state[client][symbol]  = val
     end
   end
 
   def get_client_state(symbol) 
     result = nil
     client = get_client()
-    if client != nil
-      result = @@client[client][symbol]
+    if client != nil && @client_state.has_key?(client)
+      result = @client_state[client][symbol]
     end
     return result
   end
@@ -79,7 +81,7 @@ class SiriProxy::PluginManager::ClientStateCache < SiriProxy::PluginManager
     result = nil
     plugins = get_plugin_list
     plugins.each do |plugin|
-      plugin_obj = instatiate_plugin(plugin)
+      plugin_obj = instantiate_plugin(plugin)
       if plugin_obj == nil || !plugin_obj.is_a?(SiriProxy::Plugin)
         next
       end
@@ -146,12 +148,21 @@ class SiriProxy::PluginManager::ClientStateCache < SiriProxy::PluginManager
   end
 
     
-  def text_matches(text,list, default_list = [],post =false)
+  def text_matches(text,list, default_list = [],post =false)    
+    text = text.strip
+    if post
+      result =  nil
+    else
+      result = false
+    end
+    if text == nil
+      return result
+    end
     if list == nil 
       list = default_list
     elsif list.is_a?(String)
       list = [list]
-    elsif !list.responds_to?('each')
+    elsif !list.respond_to?('each')
       list = default_list
     end
     list.each do |regexp|
@@ -163,7 +174,7 @@ class SiriProxy::PluginManager::ClientStateCache < SiriProxy::PluginManager
           #try to make it into a regexp
           regexp = eval regexp
         elsif  
-          regexp = Regexp.new("^\s*#{regexp}\s",true);
+          regexp = Regexp.new("^\s*#{regexp}",true);
         end
       end
       if regexp == nil || !regexp.is_a?(Regexp)
@@ -171,15 +182,17 @@ class SiriProxy::PluginManager::ClientStateCache < SiriProxy::PluginManager
       end
       if post
         if   (match_data = regexp.match(text)) != nil
-          return match_data.post_match
+          result =  match_data.post_match
+          break
         end
       else
         if  text.match(regexp)
-          return true
+          result =  true
+          break
         end
       end
     end
-    return false
+    return result
   end
 
 
@@ -197,10 +210,9 @@ class SiriProxy::PluginManager::ClientStateCache < SiriProxy::PluginManager
 
 
   def has_open_connection
-    return  ((open = get_app_config("open")) != nil) \
-    && open.is_a?(Integer) \
-    && activity = get_client_state(:activity)  \
-    && activity + open >= Time.now.to_i 
+    open = get_app_config("pluginManager","open")
+    activity = get_client_state(:activity)  
+    result =  open != nil && activity != nil && open.is_a?(Integer) && activity.is_a?(Integer) && (activity + open >= Time.now.to_i )
   end
   
 
@@ -211,13 +223,13 @@ class SiriProxy::PluginManager::ClientStateCache < SiriProxy::PluginManager
   def get_app_config(*args)
     result = $APP_CONFIG
     if args != nil \
-      && (first_arg = args.unshift) != nil \
-      && (result = result.first_arg) != nil
+      && (first_arg = args.shift) != nil 
+      eval "result = result.#{first_arg}"
       args.each do |arg|
         if arg == nil \
-          ||config_data == nil \
-          || !config_data.respond_to?('has_key?')\
-          || !config_data.has_key?(arg)
+          || result  == nil \
+          || !result.respond_to?('has_key?')\
+          || !result.has_key?(arg)
           result = nil
           break
         end          
@@ -238,22 +250,24 @@ class SiriProxy::PluginManager::ClientStateCache < SiriProxy::PluginManager
     result = nil
     log "Processing '#{text}'"
     do_call_backs
+    proc_text = requested(text)
+    log "Processing proc '#{text}'"
     if  has_open_connection 
       log "Connection is still open"
-      if  (proc_text = requested(text)) == nil
-        #we may not need this block... if the text is stream in tokenized chunks to process
-        proc_text = text
+      if proc_text == nil
+        #there was not request to honey made, so we need to process the original text
+        proc_text = text        
       end
-    else
-      if  (proc_text = requested(text)) == nil
-        no_matches
-        return nil
-      end
+    elsif proc_text == nil
+      log "No open connection -- passing back to siri"
+      no_matches
+      return nil
     end
     log "Got Honey Command: #{proc_text}"
     keep_open_connection
-    if result = is_goodbye(proc_text) \
-      || result = process_plugins(proc_text)
+    if proc_text \
+      && (result = is_goodbye(proc_text) \
+          || result = process_plugins(proc_text))
       self.guzzoni_conn.block_rest_of_session 
     else
       log "No matches for '#{proc_text}' on honey"
@@ -286,7 +300,9 @@ class SiriProxy::PluginManager::ClientStateCache < SiriProxy::PluginManager
     result = false
     goodbyes = get_app_config("pluginManager","goodbye")
     if (result = text_matches(text,goodbyes))      
+      log "Saying goodbye"
       close_connection
+      result = true
     end
     return result
   end
@@ -297,7 +313,7 @@ class SiriProxy::PluginManager::ClientStateCache < SiriProxy::PluginManager
   #returns nil if we need to ignore this text.  otherwise it returns the 
   #remainder of the text to be processed
   def requested(text)
-    return text_matches(get_app_config("pluginManager","identifier"),['honey'],true)
+    return text_matches(text,get_app_config("pluginManager","identifier"),['honey'],true)
   end
 
 

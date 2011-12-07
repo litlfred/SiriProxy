@@ -14,7 +14,7 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientStateCac
 
   def get_plugin_list
     result = get_app_config("speakers",get_speaker,"plugins")
-    if result == nil || !result.is_a(Array) 
+    if result == nil || !result.is_a?(Array) 
       result = []
     end
     return result
@@ -23,7 +23,10 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientStateCac
 
   def process_plugins(text)
     result = nil
-    if  (result = switch_speaker(proc_text ))== nil
+    speaker = get_speaker
+    log "Incoming speaker #{speaker}"
+    if  (result = switch_speaker(text ))== nil 
+      log "Did not switch speaker.  will prcess #{text} on parent"
       result = super(text)
     end
     return result
@@ -64,22 +67,21 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientStateCac
       && clients.respond_to?('each') \
       && speakers.respond_to?('has_key?')
       clients.each do |range,client_preferences| 
-        if!client_preferences \
-        || !client_preferences.has_key?("speakers")  \
-        || !in_range(client,range)  
-        next
-      end
-      if client_preferences['speakers'].respond_to?("each") 
-        speakers = client_preferences['speakers']
-      else
-        speakers = [client_preferences['speakers']]
-      end
-      speakers.each do |speaker|       
-        if speaker == nil
+        if !client_preferences \
+          || !client_preferences.has_key?("speakers")  \
+          || !in_range(client,range)  
           next
         end
-        if  speakers.has_key?(speaker)
-          return speaker
+        if client_preferences['speakers'].respond_to?("each") 
+          speakers = client_preferences['speakers']
+        else
+          speakers = [client_preferences['speakers']]
+        end
+        if speakers != nil \
+          && speakers.respond_to?('keys') \
+          && (keys = speakers.keys) != nil \
+          && keys.count > 0 
+          return speakers[keys[0]]
         end
       end
     end
@@ -90,7 +92,7 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientStateCac
   def switch_speaker(text) 
     new_speaker = nil
     speakers = get_app_config("speakers")
-    if speakers != null && speakers.respond_to?('each')   
+    if speakers != nil && speakers.respond_to?('each')   
       speakers.each do |speaker,speaker_config|
         if identify_speaker(speaker,text)
           new_speaker = speaker
@@ -101,7 +103,7 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientStateCac
     if new_speaker != nil && (client = get_client) != nil
       #verify on this ip address
       valid_speaker = false
-      client_prefereces = get_app_config("client_preferences")
+      client_preferences = get_app_config("client_preferences")
       if client_preferences.respond_to?('each') 
         client_preferences.each do |range,client_preferences| 
           if client_preferences == nil\
@@ -133,13 +135,13 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientStateCac
 
 
   def identify_speaker(speaker,text) 
-    return text_matches(text,get_app_config("speakers",speaker,"identity"));
+    return text_matches(text,get_app_config("speakers",speaker,"identify"));
   end
 
 
   def welcome_speaker(speaker)    
-    if (welcome = get_app_config("speakers",speaker,"welcome"))  != nil
-      respond(speaker_config['welcome'])
+    if (welcome = get_app_config("speakers",speaker,"welcome")) != nil
+      respond(welcome)
     end
   end
 
