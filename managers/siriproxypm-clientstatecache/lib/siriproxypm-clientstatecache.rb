@@ -211,8 +211,8 @@ class SiriProxy::PluginManager::ClientStateCache < SiriProxy::PluginManager
   def get_app_config(*args)
     result = $APP_CONFIG
     if args != nil \
-      && (first_arg = args.unshift) != nil
-      result = result.const_get(first_arg)
+      && (first_arg = args.unshift) != nil \
+      && (result = result.first_arg) != nil
       args.each do |arg|
         if arg == nil \
           ||config_data == nil \

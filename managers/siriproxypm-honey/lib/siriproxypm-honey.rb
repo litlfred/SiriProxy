@@ -1,7 +1,7 @@
 require 'cora'
 require 'siriproxy/plugin_manager'
 require 'socket' 
-requrie 
+require 'siriproxypm-clientstatecache'
 
 class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientStateCache
 
@@ -61,7 +61,7 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientStateCac
     clients = get_app_config('client_preferences')
     if client != nil \
       && clients != nil \
-      && clients.respond_to?('each')
+      && clients.respond_to?('each') \
       && speakers.respond_to?('has_key?')
       clients.each do |range,client_preferences| 
         if!client_preferences \
@@ -90,7 +90,7 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientStateCac
   def switch_speaker(text) 
     new_speaker = nil
     speakers = get_app_config("speakers")
-    if speakers != null speakers.respond_to?('each')   
+    if speakers != null && speakers.respond_to?('each')   
       speakers.each do |speaker,speaker_config|
         if identify_speaker(speaker,text)
           new_speaker = speaker
@@ -107,7 +107,7 @@ class SiriProxy::PluginManager::Honey < SiriProxy::PluginManager::ClientStateCac
           if client_preferences == nil\
             || !client_preferences.respond_to?("has_key?") \
             || !client_preferences.has_key?("speakers") \
-            || client_preferences['speakers'] == nil 
+            || client_preferences['speakers'] == nil  \
             || !in_range(client,range) 
             next
           end
